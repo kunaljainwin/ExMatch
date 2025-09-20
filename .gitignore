@@ -1,0 +1,62 @@
+# ---- Build artifacts ----
+/build/
+/cmake-build-*/
+/out/
+/bin/
+/lib/
+/dist/
+
+# ---- CMake ----
+CMakeCache.txt
+CMakeFiles/
+Makefile
+cmake_install.cmake
+compile_commands.json
+CTestTestfile.cmake
+
+# ---- Executables & Libraries ----
+*.exe
+*.out
+*.app
+*.dll
+*.so
+*.dylib
+*.a
+*.lib
+
+# ---- Object files ----
+*.o
+*.obj
+*.lo
+*.la
+
+# ---- Logs ----
+*.log
+
+# ---- IDE / Editor ----
+.vscode/
+.idea/
+*.swp
+*~
+*.user
+*.workspace
+*.suo
+*.ncb
+*.opensdf
+*.vcxproj*
+*.xcodeproj/
+*.DS_Store
+
+# ---- Coverage / Debug ----
+*.gcda
+*.gcno
+*.gcov
+*.profraw
+*.profdata
+
+# ---- Tests ----
+/test_output/
+/coverage/
+
+# ---- Other ----
+*.tmp
