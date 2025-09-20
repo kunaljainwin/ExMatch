@@ -1,105 +1,128 @@
-# "Trading Suite" overview
+# Trading Suite – Order Matching Engine
 
-trading-suite/                  # Root repository
-├── README.md                   # Main overview of the suite
-├── CMakeLists.txt              # Optional, can be root CMake for all projects
-├── order-matching-engine/      # Your current project
-│   ├── CMakeLists.txt
-│   ├── include/
-│   ├── src/
-│   └── tests/
-├── market-data-engine/         # Future submodule/project
-├── risk-management/            # Another potential project
-└── third_party/                # Shared libraries for all projects
+The High-performance **Order Matching Engine** implemented in modern C++17.  
+It simulates the core of a stock exchange by managing order books, matching buy and sell orders, and executing trades in real-time.
 
+## Key Features
+- **Limit Order Book (LOB)** with price-time priority matching.
+- **Order Types**: Limit, Market (extendable to Stop, IOC, GTC).
+- **Modular Architecture**:
+  - Logger (timestamped, colored, OTEL-integrable)
+  - Lock-free Queue for high-throughput messaging
+  - Custom Memory Pool for efficient allocations
+- **Text-based UI (TUI)** for interactive testing.
+- **Cross-platform Build** using CMake.
+- **Unit Testing** for core modules.
 
-order-matching-engine/
-├── CMakeLists.txt
-├── cmake/                   # Extra cmake modules (if needed)
-├── build/                   # Out-of-source builds (ignored in git)
-├── docs/                    # Documentation
-├── include/                 # Public headers
-│   └── engine/
-│       ├── Order.hpp
-│       ├── Trade.hpp
-│       ├── OrderBook.hpp
-│       ├── MatchingEngine.hpp
-│       └── Utils.hpp
-├── src/                     # Source files
-│   ├── main.cpp             # Entry point (for demo or server)
-│   ├── Order.cpp
-│   ├── Trade.cpp
-│   ├── OrderBook.cpp
-│   └── MatchingEngine.cpp
-├── tests/                   # Unit & integration tests
-│   ├── CMakeLists.txt
-│   ├── test_order.cpp
-│   ├── test_orderbook.cpp
-│   └── test_matching_engine.cpp
-├── benchmarks/              # (Optional) Performance benchmarks
-│   └── orderbook_bench.cpp
-├── scripts/                 # Helper scripts (deploy, run, generate data)
-│   └── run_engine.sh
-└── third_party/             # External libs (if vendored)
+## Technical Highlights
+- Clean **folder structure** with `inc/`, `src/`, `common/`, `apps/`, `tests/`, `scripts/`.
+- **Modern C++ practices**: RAII, smart pointers, generics, concurrency-safe modules.
+- **Logging & observability**: Central logger with debug/info/error levels, line/function info, OpenTelemetry hooks.
+- **Extensible & Scalable**: Easy to add new modules, APIs, or persistence layers.
+
+## Purpose
+This project demonstrates:
+- **Systems-level programming** in C++  
+- **Low-latency, high-throughput design**  
+- **Professional software engineering practices**, including modularity, testing, and build automation  
+
+It is ideal as a **portfolio project** to showcase skills relevant for fintech, trading platforms, or high-performance backend systems.
+
+## Folder Structure
+
+```
+C:.
+│   .gitattributes
+│   .gitignore
+│   CMakeLists.txt
+│   LICENSE
+│   README.md
+├───build
+└───order-matching-engine
+    │   CMakeLists.txt
+    │
+    ├───benchmarks
+    ├───build
+    ├───docs
+    ├───inc
+    │   ├───cli
+    │   │       client.h
+    │   │
+    │   ├───common
+    │   │       common.h
+    │   │       logger.h
+    │   │       project_defs.h
+    │   │       std_libs.h
+    │   │       types.h
+    │   │       utils.h
+    │   │
+    │   └───core
+    ├───scripts
+    │       build.bat
+    │       build.sh
+    │
+    ├───src
+    │   │   main.cpp
+    │   │   matching_engine.cpp
+    │   │
+    │   ├───cli
+    │   │       client.cpp
+    │   │
+    │   └───common
+    │           logger.cpp
+    │
+    ├───tests
+    └───third_party
+```
+# Developer Guide – Trading Suite / Order Matching Engine
+
+This guide helps developers **set up, build, and contribute** to the Trading Suite project.
+
+---
+
+## 1. Prerequisites
+
+- **C++ Compiler**: GCC >= 10 or MSVC >= 2019  
+- **CMake**: >= 3.16  
+- **Git**: for version control and submodules  
+- Optional: **Make / Ninja** (for faster builds on Linux/macOS)
+
+---
+
+## 2. Clone Repository
+
+```bash
+git clone --recurse-submodules https://github.com/kunaljainwin/ExMatch.git
+cd ExMatch
+```
+## 3. Build Project
+
+```bash
+cd order-matching-engine
+
+mkdir -p build
+cd build
+
+# Linux/macOS
+../scripts/build.sh
+
+# Windows (from PowerShell or cmd)
+../scripts/build.bat
+
+```
+
+# Research for Decisions
 
 4️⃣ README.md Strategy
 
-Keep a root README.md explaining the whole suite.
+- Keep a root README.md explaining the whole suite.
 
-Each sub-project keeps its own README.md for details.
+- Each sub-project keeps its own README.md for details.
 
 ## Other project name options
+- MatchCore, TradeSync, OrderFlow, MatchEngineX, CoreMatcher, Finance-Oriented, EquiMatch, TradeMatrix, DealMatch, LiquidityLink, ExMatch, SwiftMatch, PulseEngine, AtomicMatch, FlashMatcher, ZenithMatch, OmniMatch, ClearMatch, Align, Nexa, Syntra
 
-Technical / Professional
-
-MatchCore
-
-TradeSync
-
-OrderFlow
-
-MatchEngineX
-
-CoreMatcher
-
-Finance-Oriented
-
-EquiMatch (Equities + Match)
-
-TradeMatrix
-
-DealMatch
-
-LiquidityLink
-
-ExMatch (Exchange Match)
-
-Powerful / Modern
-
-SwiftMatch
-
-PulseEngine
-
-AtomicMatch
-
-FlashMatcher
-
-ZenithMatch
-
-Minimal / Clean
-
-OmniMatch
-
-ClearMatch
-
-Align
-
-Nexa
-
-Syntra
-
-
-## C/C++
+## C  vs C++ Decision
 Not necessarily—but let’s break it down carefully.
 
 C code in C++ compiler:
@@ -129,21 +152,21 @@ If you want, I can give a small example showing identical C code compiled with g
 
 
 ## How to manage .h files 
-💡 Rule of Thumb:
+- 💡 Rule of Thumb:
 
-Headers → minimal, only what’s needed.
+- Headers → minimal, only what’s needed.
 
-CPP → include full headers.
+- CPP → include full headers.
 
-Forward declare whenever possible.
+- Forward declare whenever possible.
 
-Guard every header.
+- Guard every header with #pragma once
 
 
 
 1. File Naming
 
-Lowercase letters with underscores for readability.
+- Lowercase letters with underscores for readability.
 
 Example: my_class.h, network_manager.cpp
 
@@ -153,11 +176,11 @@ Source files: .cc (or .cpp in some cases)
 
 Test files: end with _test.cc
 
-Example: logger_test.cc
+Example: logger_test.cc_
 
 2. Folder Structure
 
-Lowercase letters, no spaces.
+- Lowercase letters, no spaces.
 
 Group by module or feature.
 
@@ -245,24 +268,15 @@ Avoid multiple classes in a single file unless small and tightly coupled.
 
 # Naming convention for files
 
-✅ Rule of Thumb:
 
-File name: lowercase_with_underscores
+## ✅ Rule of Thumb
 
-Class name: UpperCamelCase
+- File names: lowercase with underscores, match class/module name.
 
-Functions & variables: lowerCamelCase
+- Classes: UpperCamelCase, one main class per file.
 
-Constants: k + UpperCamelCase
+- Functions & variables: lowerCamelCase.
 
-✅ Rule of Thumb
+- Constants: kPrefix + UpperCamelCase.
 
-File names: lowercase with underscores, match class/module name.
-
-Classes: UpperCamelCase, one main class per file.
-
-Functions & variables: lowerCamelCase.
-
-Constants: kPrefix + UpperCamelCase.
-
-Tests: same module name with _test.cpp suffix.
+- Tests: same module name with _test.cpp suffix.
