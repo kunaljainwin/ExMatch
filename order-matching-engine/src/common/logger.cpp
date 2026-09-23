@@ -1,4 +1,5 @@
 #include "common/logger.h"
+#include <iostream>
 #include <chrono>
 #include <iomanip>
 #include <sstream>

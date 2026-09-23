@@ -1,4 +1,4 @@
-#include "common/common.h"      // Include all common headers
+#include "common/logger.h"
 #include "cli/client.h"
 
 int main() {

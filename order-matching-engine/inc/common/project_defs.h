@@ -1,10 +1,6 @@
-/*
-Any constants, macros, enums used across modules.
-*/
 #pragma once
 
-constexpr int kMaxUsers = 1000;
-constexpr double kPi = 3.14159;
+#include <string>
 
 #define APP_NAME "order-matching-engine"
 // Assuming PROJECT_ROOT is defined in CMake

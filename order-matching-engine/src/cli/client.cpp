@@ -1,4 +1,5 @@
 #include "cli/client.h"
+#include <iostream>
 
 namespace client {
 

@@ -1,7 +1,7 @@
 #pragma once
+#include <string>
 #include <mutex>
 #include <functional>
-#include "common/std_libs.h"
 #include "common/project_defs.h"
 
 #define LOG_INFO(msg) common::Logger::log(msg, ROOT_FILE(__FILE__), __LINE__, __func__)
