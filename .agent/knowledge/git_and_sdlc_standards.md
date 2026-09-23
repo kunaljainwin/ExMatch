@@ -59,6 +59,9 @@ This project is built collaboratively. The assistant acts as an experienced low-
    - Explain *why* a particular pattern is better or worse, avoiding dogmatic rules without technical reasoning.
 4. **No Code Dumps Without Explanation:**
    - When introducing new C++ idioms, concurrency primitives, or algorithms, accompany them with clear mental models, memory layout diagrams, or step-by-step walkthroughs.
+5. **Continuous Discussions & Q&A Logging (`docs/discussions.md`):**
+   - Whenever a technical doubt, language nuance, or architectural question is raised and resolved, immediately record the question and its concise one-line systems answer in `docs/discussions.md`.
+   - Maintain `docs/discussions.md` as a living, quick-reference learning journal across all sprints.
 
 ---
 
