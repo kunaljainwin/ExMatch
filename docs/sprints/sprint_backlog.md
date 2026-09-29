@@ -30,34 +30,35 @@
 **Goal:** Build a functional, deterministic in-memory order matching prototype that accepts Limit orders, maintains sorted Bids/Asks, matches trades according to Price-Time priority, and displays book depth.
 
 ### Story 1.1: Core Domain Primitives
-- [ ] **Task 1.1.1:** Define fixed-point `Price` (`int64_t`), `Quantity` (`uint64_t`), `OrderId` (`uint64_t`), `ClientId` (`uint32_t`), `Timestamp` (`uint64_t`) in `inc/common/types.h`.
-- [ ] **Task 1.1.2:** Define scoped enums: `Side` (BUY, SELL), `OrderType` (LIMIT, MARKET), `OrderStatus` (NEW, PARTIALLY_FILLED, FILLED, CANCELLED, REJECTED).
-- [ ] **Task 1.1.3:** Provide string conversion helper utilities (`sideToString`, `orderStatusToString`) for logging and debugging.
+- [x] **Task 1.1.1:** Define fixed-point `Price` (`int64_t`), `Quantity` (`uint64_t`), `OrderId` (`uint64_t`), `ClientId` (`uint32_t`), `Timestamp` (`uint64_t`) in `inc/common/types.h`.
+- [x] **Task 1.1.2:** Define scoped enums: `Side` (BUY, SELL), `OrderType` (LIMIT, MARKET), `OrderStatus` (NEW, PARTIALLY_FILLED, FILLED, CANCELLED, REJECTED).
+- [x] **Task 1.1.3:** Provide string conversion helper utilities (`sideToString`, `orderStatusToString`) for logging and debugging.
 *Acceptance Criteria:* Compiles under C++17 with `-Wall -Wextra`, zero warnings, no floating-point arithmetic.
 
 ### Story 1.2: Order & Trade Domain Entities
-- [ ] **Task 1.2.1:** Create `inc/core/order.h` defining the `Order` entity (orderId, clientId, side, price, quantity, filledQuantity, status, timestamp).
-- [ ] **Task 1.2.2:** Add remaining quantity helper (`remainingQuantity()`) and fill helper (`fill(Quantity qty)`).
-- [ ] **Task 1.2.3:** Create `inc/core/trade.h` defining the `Trade` execution report entity (executionId, makerOrderId, takerOrderId, price, executedQuantity, timestamp).
+- [x] **Task 1.2.1:** Create `inc/core/order.h` defining the `Order` entity (orderId, clientId, side, price, quantity, filledQuantity, status, timestamp).
+- [x] **Task 1.2.2:** Add remaining quantity helper (`remainingQuantity()`) and fill helper (`fill(Quantity qty)`).
+- [x] **Task 1.2.3:** Create `inc/core/trade.h` defining the `Trade` execution report entity (executionId, makerOrderId, takerOrderId, price, executedQuantity, timestamp).
 *Acceptance Criteria:* Clean value semantics, immutable IDs, defensive assertions on overfill.
 
 ### Story 1.3: Limit Order Book Matching Logic
-- [ ] **Task 1.3.1:** Create `inc/core/order_book.h` and `src/core/order_book.cpp`.
-- [ ] **Task 1.3.2:** Implement Bid Book (sorted descending by price) and Ask Book (sorted ascending by price).
-- [ ] **Task 1.3.3:** Implement price-time priority matching algorithm:
+- [x] **Task 1.3.1:** Create `inc/core/order_book.h` and `src/core/order_book.cpp`.
+- [x] **Task 1.3.2:** Implement Bid Book (sorted descending by price) and Ask Book (sorted ascending by price).
+- [x] **Task 1.3.3:** Implement price-time priority matching algorithm:
   - Incoming BUY matches resting ASKs with $\text{Ask Price} \le \text{Bid Price}$.
   - Incoming SELL matches resting Bids with $\text{Bid Price} \ge \text{Sell Price}$.
   - Support exact fills and partial fills.
   - Residual quantity of limit order rests in the book.
-- [ ] **Task 1.3.4:** Add Level-2 snapshot inspector (`getBids()`, `getAsks()`) for book depth reporting.
+- [x] **Task 1.3.4:** Add Level-2 snapshot inspector (`getBids()`, `getAsks()`) for book depth reporting.
 *Acceptance Criteria:* Deterministic matching behavior; FIFO ordering preserved at identical price levels.
 
 ### Story 1.4: Unit Testing & End-to-End Verification
-- [ ] **Task 1.4.1:** Create `tests/order_book_test.cpp` covering:
+- [x] **Task 1.4.1:** Create `tests/order_book_test.cpp` covering:
   - Exact match of single buy and sell order.
   - Partial fill with resting remainder.
   - Multiple order execution across multiple price levels.
   - Price-time priority verification at the same price level.
+  - Order cancellation and Level-2 depth inspection.
 - [ ] **Task 1.4.2:** Update `order-matching-engine/src/main.cpp` to run an interactive demonstration verifying end-to-end functionality.
 *Acceptance Criteria:* 100% test pass on CTest suite.
 

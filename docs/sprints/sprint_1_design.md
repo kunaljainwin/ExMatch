@@ -21,7 +21,7 @@
 ---
 
 ## Task 1.2: Order & Trade Domain Entities (`inc/core/order.h`, `inc/core/trade.h`)
-- **Status:** IN PROGRESS
+- **Status:** COMPLETED (Commit `76d08bf`)
 - **Deliverables:**
 
 ### 1. `Order` Class (`inc/core/order.h`)
@@ -53,7 +53,7 @@
 ---
 
 ## Task 1.3: Limit Order Book Matching Logic (`inc/core/order_book.h`, `src/core/order_book.cpp`)
-- **Status:** PENDING
+- **Status:** COMPLETED (Commit `e424479`)
 - **Deliverables:**
   - `OrderBook` class maintaining:
     - Bids: Sorted descending by price (`std::map<Price, std::vector<Order*>, std::greater<Price>>`).
@@ -69,7 +69,7 @@
 ---
 
 ## Task 1.4: Unit Tests & End-to-End Verification (`tests/order_book_test.cpp`, `src/main.cpp`)
-- **Status:** PENDING
+- **Status:** COMPLETED
 - **Deliverables:**
   - Test Case 1: Exact Limit Match (Buy 100 @ 15000 matches Sell 100 @ 15000).
   - Test Case 2: Partial Fill (Buy 100 @ 15000 matches Sell 40 @ 15000, 60 remains resting).
