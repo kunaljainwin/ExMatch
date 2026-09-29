@@ -1,29 +1,34 @@
 #pragma once
+
+#include "core/order_book.h"
+#include "core/order.h"
 #include <memory>
-// #include "Engine/OrderBook.h"
-#include "common/logger.h"
+#include <string>
+#include <vector>
 
 namespace client {
 
 class Client {
 public:
-    Client();  // Constructor
+    Client();
     ~Client();
 
-    // Start the text-based UI loop
     void runTUI();
+    void runDemo();
 
-    // Submit a new order to the engine
     void submitOrder(const std::string& orderStr);
-
-    // Cancel an order by ID
-    void cancelOrder(const std::string& orderId);
+    void cancelOrder(const std::string& orderIdStr);
+    void displayDepth() const;
 
 private:
-    // std::unique_ptr<engine::OrderBook> orderBook_;
+    void printMenu() const;
+    void printTrades(const std::vector<core::Trade>& trades) const;
+    void executeOrderSubmission(common::Side side, common::Quantity quantity, common::Price price);
 
-    // Print menu and read user input
-    void printMenu();
+    core::OrderBook orderBook_;
+    std::vector<std::unique_ptr<core::Order>> orders_;
+    common::OrderId nextOrderId_{1};
+    common::ClientId defaultClientId_{1001};
 };
 
 } // namespace client

@@ -10,8 +10,8 @@
 | Sprint | Focus Area | Status | Target Deliverable |
 | :--- | :--- | :--- | :--- |
 | **Sprint 0** | Foundation & Project Hierarchy | **COMPLETED** | Aligned folder structure, CMake targets, Git standards |
-| **Sprint 1** | In-Memory Working Prototype (MVP) | **IN PROGRESS** | Deterministic Limit Order Book, Price-Time matching, unit tests |
-| **Sprint 2** | Concurrency & SPSC Ring Buffers | PLANNED | Single-writer pinned core, lock-free queues, decoupled ingress/egress |
+| **Sprint 1** | In-Memory Working Prototype (MVP) | **COMPLETED** | Deterministic Limit Order Book, Price-Time matching, unit tests |
+| **Sprint 2** | Concurrency & SPSC Ring Buffers | **ACTIVE** | Single-writer pinned core, lock-free queues, decoupled ingress/egress |
 | **Sprint 3** | Low-Latency Optimization | PLANNED | Zero heap allocation, intrusive order lists, power-of-2 bitwise masking |
 | **Sprint 4** | Observability & Production Resilience | PLANNED | Async zero-allocation logger, FMEA error handling, cancel-on-disconnect |
 | **Sprint 5** | Exchange Gateway Interop | PLANNED | Binary packet protocol, `ExchangeSimulator` integration |
@@ -26,7 +26,7 @@
 
 ---
 
-## Sprint 1: In-Memory Limit Order Book Prototype (Active Sprint)
+## Sprint 1: In-Memory Limit Order Book Prototype (Completed)
 **Goal:** Build a functional, deterministic in-memory order matching prototype that accepts Limit orders, maintains sorted Bids/Asks, matches trades according to Price-Time priority, and displays book depth.
 
 ### Story 1.1: Core Domain Primitives
@@ -59,7 +59,7 @@
   - Multiple order execution across multiple price levels.
   - Price-time priority verification at the same price level.
   - Order cancellation and Level-2 depth inspection.
-- [ ] **Task 1.4.2:** Update `order-matching-engine/src/main.cpp` to run an interactive demonstration verifying end-to-end functionality.
+- [x] **Task 1.4.2:** Update `order-matching-engine/src/main.cpp` to run an interactive demonstration verifying end-to-end functionality.
 *Acceptance Criteria:* 100% test pass on CTest suite.
 
 ---

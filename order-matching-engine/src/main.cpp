@@ -1,28 +1,17 @@
 #include "common/logger.h"
 #include "cli/client.h"
+#include <string>
 
-int main() {
-    // TODO: Initialize configuration
-    // Example: Config config;
-    
-    // TODO: Initialize system manager
-    // Example: SystemManager sysManager(config);
-    
-    // TODO: Initialize network manager
-    // Example: NetworkManager netManager;
-    
-    // TODO: Add your main logic here
-    // Example: netManager.connectToServer();
-    
-    // Print a simple message
+int main(int argc, char* argv[]) {
     common::Logger::enableTimestamp(false);
-    // LOG_DEBUG("Order Matching Engine started successfully.");
-    // LOG_INFO("Order Matching Engine started successfully.");
-    // LOG_ERROR("Order Matching Engine started successfully.");
-    // LOG_WARN("Order Matching Engine started successfully.");
-    // LOG_FATAL("Order Matching Engine started successfully.");
-    client::Client client;
-    client.runTUI();
 
+    client::Client client;
+
+    if (argc > 1 && std::string(argv[1]) == "--demo") {
+        client.runDemo();
+        return 0;
+    }
+
+    client.runTUI();
     return 0;
 }
