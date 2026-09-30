@@ -67,10 +67,11 @@
 ## Sprint 2: Concurrency & Lock-Free SPSC Ring Buffers
 **Goal:** Decouple order submission from the core matching engine using lock-free Single-Producer Single-Consumer (SPSC) ring buffers.
 
-- [ ] **Story 2.1:** Correct and complete `inc/common/lock_free_queue.hpp` (fix access specifiers, in-class initialization, power-of-2 bitwise mask).
-- [ ] **Story 2.2:** Implement SPSC `enqueue()` and `dequeue()` with C++17 `acquire`/`release` memory barriers.
-- [ ] **Story 2.3:** Add unit test `tests/lock_free_queue_test.cpp` verifying multi-threaded producer-consumer data integrity.
+- [x] **Story 2.1:** Correct and complete `inc/common/lock_free_queue.hpp` (fix access specifiers, in-class initialization, power-of-2 bitwise mask).
+- [x] **Story 2.2:** Implement SPSC `enqueue()` and `dequeue()` with C++17 `acquire`/`release` memory barriers and `alignas(64)` false sharing elimination.
+- [x] **Story 2.3:** Add unit test `tests/lock_free_queue_test.cpp` verifying multi-threaded producer-consumer data integrity.
 - [ ] **Story 2.4:** Spawn dedicated matching engine thread reading from Ingress SPSC Queue and emitting to Egress SPSC Queue.
+
 
 ---
 
