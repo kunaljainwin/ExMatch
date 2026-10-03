@@ -62,3 +62,34 @@ Start with a clean, working prototype (MVP), verify behavior, then iteratively r
 
 - **Story 5.1:** Binary packet protocol serialization (`Packet.hpp`).
 - **Story 5.2:** Adaptor connecting to `ExchangeSimulator`'s `trading_gateway`.
+
+---
+
+## Sprint 6: Monotonic Sequencing, Idempotency & WAL Replay
+**Goal:** Guarantee strict total ordering, eliminate duplicate order submissions, and maintain an immutable write-ahead journal.
+
+- **Story 6.1:** Lock-free atomic `Sequencer` assigning monotonically increasing 64-bit sequence numbers.
+- **Story 6.2:** Bounded `IdempotencyTable` at ingress for `(clientId, clientOrderId)` deduplication.
+- **Story 6.3:** Append-only binary Write-Ahead Log (`EventLog`) with sequential flush.
+- **Story 6.4:** `DeterministicReplayer` verifying identical state reconstruction from an event stream.
+
+---
+
+## Sprint 7: Checksummed Snapshots & Crash Recovery
+**Goal:** Implement point-in-time state snapshotting and verified crash recovery with sequence-gap detection.
+
+- **Story 7.1:** `SnapshotManager` serializing order book state at sequence $N$ with CRC32/SHA-256 checksums.
+- **Story 7.2:** Atomic snapshot file rotation and corrupted snapshot fallback.
+- **Story 7.3:** `RecoveryCoordinator` orchestrating state restoration from snapshot $N$ and WAL replay from $N + 1$.
+- **Story 7.4:** Sequence-gap detection in recovery replayer (halt on missing sequence).
+- **Story 7.5:** Crash recovery integration test verifying zero state discrepancy.
+
+---
+
+## Sprint 8: Multi-Symbol Partitioning & Hot Standby Replication
+**Goal:** Scale throughput horizontally across multiple instruments and achieve sub-millisecond failover.
+
+- **Story 8.1:** `SymbolPartitionRouter` dispatching orders to isolated, core-pinned symbol matching engines.
+- **Story 8.2:** Active-passive `StandbyEngine` continuously tailing the Event Log in memory.
+- **Story 8.3:** Heartbeat monitoring and zero-downtime primary failover protocol.
+

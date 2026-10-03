@@ -15,6 +15,9 @@
 | **Sprint 3** | Low-Latency Optimization | PLANNED | Zero heap allocation, intrusive order lists, power-of-2 bitwise masking |
 | **Sprint 4** | Observability & Production Resilience | PLANNED | Async zero-allocation logger, FMEA error handling, cancel-on-disconnect |
 | **Sprint 5** | Exchange Gateway Interop | PLANNED | Binary packet protocol, `ExchangeSimulator` integration |
+| **Sprint 6** | Monotonic Sequencing, Idempotency & WAL | PLANNED | Lock-free sequencer, clientOrderId deduplication, append-only WAL |
+| **Sprint 7** | Checksummed Snapshots & Gap-Free Recovery | PLANNED | Atomic snapshots, CRC32 verification, sequence-gap detection |
+| **Sprint 8** | Multi-Symbol Partitioning & Hot Standby | PLANNED | Symbol partition router, shadow standby replay, instant failover |
 
 ---
 
@@ -102,3 +105,34 @@
 - [ ] **Story 5.1:** Define binary packet protocol (`inc/protocol/packet.h`) matching `ExchangeSimulator/common/include/Packet.hpp`.
 - [ ] **Story 5.2:** Connect `TradingGateway` transport to `ExMatch` ingress SPSC queue.
 - [ ] **Story 5.3:** Run full end-to-end integration test with client simulator submitting trades through gateway router to `ExMatch`.
+
+---
+
+## Sprint 6: Monotonic Sequencing, Idempotency & WAL Replay
+**Goal:** Guarantee strict total ordering, eliminate duplicate order submissions, and maintain an immutable write-ahead journal.
+
+- [ ] **Story 6.1:** Implement lock-free atomic `Sequencer` assigning monotonically increasing 64-bit sequence numbers to every valid event.
+- [ ] **Story 6.2:** Implement bounded `IdempotencyTable` at ingress mapping `(clientId, clientOrderId)` to avoid duplicate executions.
+- [ ] **Story 6.3:** Implement append-only binary Write-Ahead Log (`EventLog`) with sequential flush and event serialization.
+- [ ] **Story 6.4:** Implement `DeterministicReplayer` verifying identical state reconstruction from an event stream.
+
+---
+
+## Sprint 7: Checksummed Snapshots & Crash Recovery
+**Goal:** Implement point-in-time state snapshotting and verified crash recovery with sequence-gap detection.
+
+- [ ] **Story 7.1:** Implement `SnapshotManager` serializing order book state at sequence $N$ with CRC32/SHA-256 checksums.
+- [ ] **Story 7.2:** Implement atomic snapshot file rotation (`snapshot_<seq>.bin`) and fallback handling for corrupted snapshots.
+- [ ] **Story 7.3:** Implement `RecoveryCoordinator` orchestrating state restoration from snapshot $N$ and WAL replay from $N + 1$.
+- [ ] **Story 7.4:** Implement sequence-gap detection in recovery replayer (halt on $\text{seq}_i \ne \text{seq}_{i-1} + 1$).
+- [ ] **Story 7.5:** Add comprehensive crash recovery integration test simulating abrupt engine kill and verified state restoration.
+
+---
+
+## Sprint 8: Multi-Symbol Partitioning & Hot Standby Replication
+**Goal:** Scale throughput horizontally across multiple instruments and achieve sub-millisecond failover.
+
+- [ ] **Story 8.1:** Implement `SymbolPartitionRouter` dispatching orders to isolated, core-pinned symbol matching engines (`BTC`, `ETH`, `SOL`).
+- [ ] **Story 8.2:** Implement active-passive `StandbyEngine` continuously tailing the Event Log in memory.
+- [ ] **Story 8.3:** Implement heartbeat monitoring and zero-downtime primary failover protocol.
+

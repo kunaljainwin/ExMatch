@@ -7,14 +7,20 @@ Transform the current scaffolding of `ExMatch` into a complete, high-performance
 ## 1. Key Architectural Decisions
 
 1. **Price Precision Standard:** Fixed-point 64-bit signed integers (`int64_t Price`, where `1 unit = 10^-4` or `0.0001` dollars/cents, allowing exact sub-penny representation) instead of floating-point numbers.
-2. **Single-Threaded Engine Core:** Following standard institutional exchange architecture (e.g., LMAX Disruptor pattern), the matching engine core operates single-threaded on a dedicated, core-pinned thread reading from an SPSC lock-free ring buffer. This guarantees zero lock contention on the order book.
-3. **Order Types in Scope for Initial Release:** Limit Order, Market Order, and Cancel Order. (IOC / FOK / Stop orders structured for subsequent additions).
+2. **Single-Writer In-Memory Core:** The matching engine hot path executes strictly in-memory on a dedicated core-pinned thread reading from an SPSC lock-free ring buffer. Zero lock contention, zero OS context switches, and zero network/database I/O on the matching path.
+3. **Strict Non-Hot-Path Boundary for Redis:** Redis or external network caches are prohibited on the matching hot path to prevent serialization and network jitter. Redis is strictly relegated to non-hot-path roles (gateway idempotency tokens, user sessions, configuration metadata).
+4. **Horizontal Scaling via Symbol Partitioning:** Independent symbols (`BTC-USD`, `ETH-USD`) are partitioned across isolated single-writer matching engines. Intra-book execution preserves strict single-threaded total ordering.
+5. **Monotonic Event Sequencing:** Every accepted event is stamped with a strictly increasing 64-bit sequence number, establishing a total order independent of wall-clock jitter.
+6. **Append-Only Event Log (WAL) & Deterministic State Machine:** All mutations write to a durable append-only journal. Given the identical sequence of inputs, the engine deterministically reproduces identical order books and trade executions.
+7. **Periodic Snapshots with Gap-Free Recovery:** Checksummed state snapshots are saved at sequence $N$. Recovery loads snapshot $N$, streams event log from $N+1$, enforces sequence continuity (halting on gaps), and resumes execution.
+8. **Hot Standby Engine:** Standby engine continuously replays the event log in shadow mode for instant failover without cold restart latency.
+9. **Order Types in Scope:** Limit Order, Market Order, and Cancel Order (IOC / FOK / Stop orders structured for subsequent additions).
 
 ---
 
 ## 2. Implementation Phases
 
-The implementation is structured into **6 logical, sequential phases**:
+The implementation is structured into **10 logical, sequential phases**:
 
 ---
 
@@ -47,14 +53,14 @@ Establish thread-safe, lock-free, cache-aligned communication primitives with co
 Define cache-aligned, fixed-point financial domain primitives.
 
 * **[types.h](../order-matching-engine/inc/common/types.h)**
-  - Add `Price` (`int64_t`), `Quantity` (`uint64_t`), `OrderId` (`uint64_t`), `ClientId` (`uint32_t`), `Timestamp` (`uint64_t`).
+  - Add `Price` (`int64_t`), `Quantity` (`uint64_t`), `OrderId` (`uint64_t`), `ClientId` (`uint32_t`), `Timestamp` (`uint64_t`), `SequenceNum` (`uint64_t`).
   - Add enums: `Side { BUY, SELL }`, `OrderType { LIMIT, MARKET }`, `OrderStatus { NEW, PARTIALLY_FILLED, FILLED, CANCELLED, REJECTED }`.
 
 * **`order.h` (`order-matching-engine/inc/core/order.h`)**
   - Define cache-optimized `Order` struct with intrusive doubly-linked list pointers (`prev`, `next`) for $O(1)$ FIFO queue operations.
 
 * **`trade.h` (`order-matching-engine/inc/core/trade.h`)**
-  - Define `Trade` execution report struct (ExecutionId, MakerOrderId, TakerOrderId, Price, Quantity, Timestamp).
+  - Define `Trade` execution report struct (ExecutionId, MakerOrderId, TakerOrderId, Price, Quantity, Timestamp, SequenceNum).
 
 ---
 
@@ -123,6 +129,72 @@ Connect the matching engine to the CLI interface for live demonstration.
 
 ---
 
+### Phase 7: Event Sequencing, Idempotency & Deduplication Engine
+
+Ensure duplicate requests are safely rejected and all mutations are strictly ordered.
+
+* **`idempotency_table.h` (`order-matching-engine/inc/core/idempotency_table.h`)**
+  - In-memory bounded cache tracking `(clientId, clientOrderId) -> OrderResponse`.
+  - Fast reject of retransmitted/duplicate client submissions without triggering matching logic.
+
+* **`sequencer.h` (`order-matching-engine/inc/core/sequencer.h`)**
+  - Lock-free monotonic 64-bit sequence generator stamping every accepted ingress event.
+  - Guaranteed gapless sequence numbering for strict total order.
+
+---
+
+### Phase 8: Append-Only Event Log (WAL) & Deterministic Replay
+
+Provide durable event history and replay capability.
+
+* **`event_log.h` / `event_log.cpp` (`order-matching-engine/inc/core/event_log.h`, `src/core/event_log.cpp`)**
+  - High-throughput append-only binary journal writing events (`NEW_ORDER`, `CANCEL_ORDER`, `TRADE_EXECUTION`).
+  - Memory-mapped file (mmap) or asynchronous background disk flushing.
+  - Read stream API supporting range scans: `readEvents(fromSequence, toSequence)`.
+
+* **`deterministic_replayer.h` (`order-matching-engine/inc/core/deterministic_replayer.h`)**
+  - Replays historical event streams against a clean `OrderBook` instance.
+  - Verifies that replay produces exact identical state and trade outputs.
+
+---
+
+### Phase 9: State Snapshotting, Checksum Verification & Gap-Detection Recovery
+
+Guarantee rapid, verified recovery following crash or restart.
+
+* **`snapshot_manager.h` / `snapshot_manager.cpp` (`order-matching-engine/inc/core/snapshot_manager.h`)**
+  - Periodic serialization of full order book depth tagged with snapshot sequence $N$.
+  - Generates CRC32/SHA-256 checksums to detect disk corruption.
+  - Atomic rotation: writes to temporary file and renames upon checksum verification.
+
+* **`recovery_coordinator.h` (`order-matching-engine/inc/core/recovery_coordinator.h`)**
+  - 10-step recovery orchestrator:
+    1. Stop/drain ingress traffic.
+    2. Load latest verified snapshot file.
+    3. Verify snapshot checksum; fallback to preceding snapshot if corrupt.
+    4. Reconstruct order book state at sequence $N$.
+    5. Replay WAL events starting strictly from $N + 1$.
+    6. **Sequence-gap detection**: Halt if $\text{seq}_{i} \ne \text{seq}_{i-1} + 1$.
+    7. Complete replay to latest sequence.
+    8. Mark matching engine state as `READY`.
+    9. Resume ingress order processing.
+
+---
+
+### Phase 10: Multi-Symbol Partitioning Router & Hot Standby Replication
+
+Scale throughput across multiple instruments and achieve near-zero RTO failover.
+
+* **`symbol_partition_router.h` (`order-matching-engine/inc/core/symbol_partition_router.h`)**
+  - Gateway routing orders to symbol-specific single-writer matching engines (`BTC`, `ETH`, `SOL`).
+  - Zero cross-thread communication between distinct symbol partitions.
+
+* **`standby_engine.h` (`order-matching-engine/inc/core/standby_engine.h`)**
+  - Shadow matching engine continuously tailing the active Event Log in memory.
+  - Instantaneous primary takeover upon heartbeat failure without cold snapshot loading.
+
+---
+
 ## 3. Verification Plan
 
 ### Automated Tests
@@ -135,7 +207,13 @@ Connect the matching engine to the CLI interface for live demonstration.
    ```bash
    ctest --test-dir build --output-on-failure
    ```
-3. **Microbenchmarks:**
+3. **Idempotency & Sequence Continuity Tests:**
+   - Verify duplicate `clientOrderId` rejections.
+   - Verify monotonic sequence generator under burst concurrency.
+4. **Recovery & Sequence-Gap Detection Tests:**
+   - Inject simulated crash at sequence $N + 500$; verify full state recovery from snapshot $N$.
+   - Inject artificial sequence gap ($1002 \to 1005$); verify recovery halts defensively.
+5. **Microbenchmarks:**
    ```bash
    ./build/order-matching-engine/benchmarks/queue_benchmark
    ```
@@ -147,3 +225,5 @@ Connect the matching engine to the CLI interface for live demonstration.
    * `BUY 50 @ 150.00` (test FIFO queueing)
    * `SELL 120 @ 150.00` (verify partial fill of first order and full fill of second order)
 3. Display order book using `BOOK` and confirm exact remaining depth (30 shares at 150.00).
+4. Trigger manual snapshot and replay to verify state consistency.
+

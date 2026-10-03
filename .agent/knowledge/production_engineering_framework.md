@@ -10,6 +10,7 @@
 
 - **System:** `ExMatch` (Trading Suite – Institutional Limit Order Book Matching Engine)
 - **Primary Goal:** High-throughput, deterministic sub-microsecond order matching engine simulating exchange core functionality (Order Books, Price-Time FIFO matching, trade generation, audit logging, and gateway interop).
+- **Core Mental Model (The 8 Pillars):** `In-memory → Single writer → Partition → Sequence → Event log → Snapshot → Replay → Deterministic`.
 - **Core Stack:** Modern C++17, POSIX Threads with CPU affinity, Lock-free SPSC Ring Buffers, CMake, Linux OS.
 - **Interoperability:** `../ExchangeSimulator` ecosystem (Gateway Router `GR`, Trading Gateway `TG`, Binary Packets).
 - **Production Standard:** Designed to handle institutional order flow under high burst loads with predictable P99 latency.
@@ -33,11 +34,11 @@
 Before writing production implementation code:
 1. Clarify functional requirements (order types, time-in-force, matching priority).
 2. Identify non-functional requirements (latency percentiles, throughput, jitter bounds).
-3. Define critical assumptions and volume bounds (max open orders, burst rate).
-4. Identify hardware and algorithmic bottlenecks (cache misses, context switches, memory fences).
-5. Design high-level component architecture and thread models (Single-Writer Principle, Core Isolation).
+3. Enforce the Single-Writer In-Memory boundary: no locks, and strictly no Redis or network I/O on the matching hot path.
+4. Scale horizontally by partitioning independent order books by symbol (`BTC`, `ETH`).
+5. Enforce monotonic 64-bit event sequencing for strict total ordering.
 6. Define binary wire protocols and memory data contracts (`Packet`, `Order`, `Trade`).
-7. Document architectural tradeoffs explicitly.
+7. Evaluate latency vs. durability trade-offs (synchronous WAL vs. batched flush vs. hot standby).
 
 ---
 
@@ -48,9 +49,12 @@ For every critical component, evaluate:
 
 Key exchange failure modes:
 - **Ring Buffer Full (Ingress Saturation):** Detection via atomic counter; Mitigation: drop with explicit `REJECTED_BUFFER_FULL` status or backpressure; Recovery: resume on drain; Impact: zero state corruption.
-- **Taker Execution Without Counterparty Liquidity:** Market order sweep exhausting the book.
+- **Duplicate Order / Client Retransmit:** Detection via `(clientId, clientOrderId)` cache; Mitigation: return prior acknowledgment without matching; Recovery: none needed; Impact: prevents duplicate fills.
+- **Process Crash / Sudden Power Loss:** Detection via process exit / heartbeat; Mitigation: load latest valid snapshot $N$, verify checksum, stream WAL from $N+1$; Recovery: replay to crash sequence; Impact: zero state loss.
+- **Sequence-Gap During Replay:** Detection via $\text{seq}_i \ne \text{seq}_{i-1} + 1$; Mitigation: HALT immediately; Recovery: fetch missing packets from event store before marking READY; Impact: prevents corrupt order book balances.
+- **Snapshot Corruption:** Detection via CRC32/SHA-256 checksum mismatch; Mitigation: fall back to preceding valid snapshot $N_{\text{prev}}$; Recovery: replay events from $N_{\text{prev}} + 1$; Impact: ensures verified baseline.
+- **Taker Execution Without Counterparty Liquidity:** Market order sweep exhausting the book; Mitigation: partial fill, reject unfilled remainder; Recovery: book remains balanced.
 - **Client Disconnection / Session Drop:** Cancel-on-Disconnect (COD) logic.
-- **Process Crash / Sudden Power Loss:** Deterministic state replay via Write-Ahead Log (WAL) or snapshot journals.
 - **CPU Throttling / Frequency Scaling:** Core pinning with `performance` CPU governor and `isolcpus`.
 
 ---
@@ -71,6 +75,7 @@ Key exchange failure modes:
 - **Lock-Free Communication:** SPSC ring buffers for ingress, egress, and logging.
 - **Memory Ordering:** Explicit `acquire`/`release` semantics; avoid default `seq_cst` unless globally required.
 - **Power-of-2 Capacities:** Replace division modulo `%` with single-cycle bitwise `& (capacity - 1)`.
+- **Strict In-Memory Hot Path:** No network or external caches (Redis) on the matching path; external caches are for non-hot-path metadata only.
 
 ---
 

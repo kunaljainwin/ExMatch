@@ -4,21 +4,27 @@ The High-performance **Order Matching Engine** implemented in modern C++17.
 It simulates the core of a stock exchange by managing order books, matching buy and sell orders, and executing trades in real-time.
 
 ## Key Features
-- **Limit Order Book (LOB)** with price-time priority matching.
+- **Limit Order Book (LOB)** with deterministic price-time priority matching.
+- **Single-Writer In-Memory Architecture**: Lock-free, wait-free execution path on dedicated CPU cores.
+- **Horizontal Scaling via Symbol Partitioning**: Independent order books partitioned across isolated engine workers.
+- **Monotonic 64-bit Event Sequencing**: Strict total ordering independent of non-monotonic wall-clock jitter.
+- **Durable Append-Only Event Log (WAL)**: Fast sequential audit journal for event streaming and deterministic replay.
+- **Point-in-Time Checksummed Snapshots**: Fast crash recovery with sequence-gap detection ($O(\text{replay window})$).
+- **Gateway Idempotency Filter**: Client-scoped deduplication (`clientOrderId`) preventing duplicate executions.
+- **Hot Standby Active-Passive Replication**: Real-time shadow replay for sub-millisecond failover.
 - **Order Types**: Limit, Market (extendable to Stop, IOC, GTC).
-- **Modular Architecture**:
-  - Logger (timestamped, colored, OTEL-integrable)
-  - Lock-free Queue for high-throughput messaging
-  - Custom Memory Pool for efficient allocations
 - **Text-based UI (TUI)** for interactive testing.
 - **Cross-platform Build** using CMake.
 - **Unit Testing** for core modules.
 
 ## Technical Highlights
-- Clean **folder structure** with `inc/`, `src/`, `common/`, `apps/`, `tests/`, `scripts/`.
-- **Modern C++ practices**: RAII, smart pointers, generics, concurrency-safe modules.
-- **Logging & observability**: Central logger with debug/info/error levels, line/function info, OpenTelemetry hooks.
-- **Extensible & Scalable**: Easy to add new modules, APIs, or persistence layers.
+- **The 8 Core Pillars**: `In-memory → Single writer → Partition → Sequence → Event log → Snapshot → Replay → Deterministic`.
+- **Strict Non-Hot-Path Redis Boundary**: Hot matching executes exclusively in RAM; external caching is restricted to non-hot-path metadata.
+- **Clean folder structure** with `inc/`, `src/`, `common/`, `core/`, `cli/`, `tests/`, `benchmarks/`.
+- **Modern C++17 systems programming**: Fixed-point tick arithmetic (`int64_t Price`), cache-line alignment (`alignas(64)`), RAII, intrusive data structures.
+- **Lock-Free Concurrency**: SPSC ring buffers with C++17 `acquire`/`release` memory barriers and power-of-two bitwise masking.
+- **Zero-Allocation Async Logging**: Ring-buffer logger decoupling terminal/disk I/O from the matching hot path.
+
 
 ## Purpose
 This project demonstrates:
