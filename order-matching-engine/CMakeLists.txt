@@ -30,6 +30,8 @@ endif()
 
 find_package(Threads REQUIRED)
 
+target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads)
+
 # Unit Tests
 enable_testing()
 add_executable(order_book_test
@@ -57,4 +59,19 @@ else()
 endif()
 
 add_test(NAME LockFreeQueueTests COMMAND lock_free_queue_test)
+
+add_executable(matching_engine_test
+    ${PROJECT_SOURCE_DIR}/tests/matching_engine_test.cpp
+    ${PROJECT_SOURCE_DIR}/src/core/matching_engine.cpp
+    ${PROJECT_SOURCE_DIR}/src/core/order_book.cpp
+)
+target_include_directories(matching_engine_test PRIVATE ${PROJECT_SOURCE_DIR}/inc)
+target_link_libraries(matching_engine_test PRIVATE Threads::Threads)
+if(MSVC)
+    target_compile_options(matching_engine_test PRIVATE /W4 /permissive-)
+else()
+    target_compile_options(matching_engine_test PRIVATE -Wall -Wextra -pedantic)
+endif()
+
+add_test(NAME MatchingEngineTests COMMAND matching_engine_test)
 

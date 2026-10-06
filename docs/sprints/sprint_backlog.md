@@ -11,8 +11,8 @@
 | :--- | :--- | :--- | :--- |
 | **Sprint 0** | Foundation & Project Hierarchy | **COMPLETED** | Aligned folder structure, CMake targets, Git standards |
 | **Sprint 1** | In-Memory Working Prototype (MVP) | **COMPLETED** | Deterministic Limit Order Book, Price-Time matching, unit tests |
-| **Sprint 2** | Concurrency & SPSC Ring Buffers | **ACTIVE** | Single-writer pinned core, lock-free queues, decoupled ingress/egress |
-| **Sprint 3** | Low-Latency Optimization | PLANNED | Zero heap allocation, intrusive order lists, power-of-2 bitwise masking |
+| **Sprint 2** | Concurrency & SPSC Ring Buffers | **COMPLETED** | Single-writer pinned core, lock-free queues, decoupled ingress/egress |
+| **Sprint 3** | Low-Latency Optimization | **ACTIVE** | Zero heap allocation, intrusive order lists, power-of-2 bitwise masking |
 | **Sprint 4** | Observability & Production Resilience | PLANNED | Async zero-allocation logger, FMEA error handling, cancel-on-disconnect |
 | **Sprint 5** | Exchange Gateway Interop | PLANNED | Binary packet protocol, `ExchangeSimulator` integration |
 | **Sprint 6** | Monotonic Sequencing, Idempotency & WAL | PLANNED | Lock-free sequencer, clientOrderId deduplication, append-only WAL |
@@ -67,13 +67,13 @@
 
 ---
 
-## Sprint 2: Concurrency & Lock-Free SPSC Ring Buffers
+## Sprint 2: Concurrency & Lock-Free SPSC Ring Buffers (Completed)
 **Goal:** Decouple order submission from the core matching engine using lock-free Single-Producer Single-Consumer (SPSC) ring buffers.
 
 - [x] **Story 2.1:** Correct and complete `inc/common/lock_free_queue.hpp` (fix access specifiers, in-class initialization, power-of-2 bitwise mask).
 - [x] **Story 2.2:** Implement SPSC `enqueue()` and `dequeue()` with C++17 `acquire`/`release` memory barriers and `alignas(64)` false sharing elimination.
 - [x] **Story 2.3:** Add unit test `tests/lock_free_queue_test.cpp` verifying multi-threaded producer-consumer data integrity.
-- [ ] **Story 2.4:** Spawn dedicated matching engine thread reading from Ingress SPSC Queue and emitting to Egress SPSC Queue.
+- [x] **Story 2.4:** Spawn dedicated matching engine thread reading from Ingress SPSC Queue and emitting to Egress SPSC Queue.
 
 
 ---

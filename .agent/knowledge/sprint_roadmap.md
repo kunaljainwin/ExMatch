@@ -13,32 +13,25 @@ Start with a clean, working prototype (MVP), verify behavior, then iteratively r
 
 ---
 
-## Sprint 1: End-to-End Working Prototype (Current Sprint)
+## Sprint 1: End-to-End Working Prototype (Completed)
 **Goal:** Build a clean, deterministic, functional in-memory Limit Order Book matching engine that compiles, runs, accepts orders, matches trades, and outputs order book state.
 
-- **Story 1.1: Domain Entities (`inc/common/types.h`, `inc/core/order.h`, `inc/core/trade.h`)**
-  - Clean representation of `Price`, `Quantity`, `OrderId`, `Side` (BUY, SELL), `OrderType` (LIMIT, MARKET).
-  - Data contracts for `Order` and `Trade`.
-- **Story 1.2: Order Book Prototype (`inc/core/order_book.h`, `src/core/order_book.cpp`)**
-  - Maintain sorted bids (descending) and asks (ascending).
-  - Implement price-time priority matching logic.
-  - Generate execution trades for overlapping prices.
-- **Story 1.3: Verification & Interactive Demonstration**
-  - Write first unit test (`tests/order_book_test.cpp`).
-  - Wire to `main.cpp` to verify end-to-end order entry and matching output.
+- [x] **Story 1.1: Domain Entities (`inc/common/types.h`, `inc/core/order.h`, `inc/core/trade.h`)**
+- [x] **Story 1.2: Order Book Prototype (`inc/core/order_book.h`, `src/core/order_book.cpp`)**
+- [x] **Story 1.3: Verification & Interactive Demonstration (`tests/order_book_test.cpp`)**
 
 ---
 
-## Sprint 2: Concurrency & Decoupled Architecture
+## Sprint 2: Concurrency & Decoupled Architecture (Completed)
 **Goal:** Decouple order submission from the matching core using producer-consumer message queues.
 
-- **Story 2.1:** Queue abstraction and SPSC ring buffer.
-- **Story 2.2:** Single-writer matching engine thread consuming from ingress queue.
-- **Story 2.3:** Output egress queue for trade events.
+- [x] **Story 2.1:** Queue abstraction and SPSC ring buffer (`inc/common/lock_free_queue.hpp`).
+- [x] **Story 2.2:** Single-writer matching engine worker thread consuming from ingress queue (`inc/core/matching_engine.h`, `src/core/matching_engine.cpp`).
+- [x] **Story 2.3:** Output egress queue for trade events and execution reports (`tests/matching_engine_test.cpp`).
 
 ---
 
-## Sprint 3: Low-Latency Optimization & Cache Architecture
+## Sprint 3: Low-Latency Optimization & Cache Architecture (Active)
 **Goal:** Upgrade the working engine to institutional HFT performance standards.
 
 - **Story 3.1:** Eliminate dynamic heap allocation in hot path (intrusive lists & order pools).
