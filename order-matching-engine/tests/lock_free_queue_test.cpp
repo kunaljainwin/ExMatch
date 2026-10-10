@@ -62,6 +62,16 @@ void testQueueBasicOperations() {
     ASSERT_TRUE(queue.empty(), "Queue should be empty after reading all items");
 }
 
+void testQueueZeroCapacityThrows() {
+    bool caught = false;
+    try {
+        LFQueue<int> queue(0);
+    } catch (const std::invalid_argument&) {
+        caught = true;
+    }
+    ASSERT_TRUE(caught, "Capacity 0 must throw std::invalid_argument");
+}
+
 void testQueuePowerOfTwoRounding() {
     LFQueue<int> queue(5); // Non-power of 2: should round up to 8
     ASSERT_EQ(queue.capacity(), 8, "Capacity 5 should round up to 8");
@@ -120,6 +130,9 @@ int main() {
 
     testQueuePowerOfTwoRounding();
     std::cout << "  [PASS] testQueuePowerOfTwoRounding\n";
+
+    testQueueZeroCapacityThrows();
+    std::cout << "  [PASS] testQueueZeroCapacityThrows\n";
 
     testConcurrentSPSCIntegrity();
     std::cout << "  [PASS] testConcurrentSPSCIntegrity (500,000 messages across threads)\n";

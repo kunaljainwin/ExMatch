@@ -21,13 +21,10 @@ template <typename T>
 class LFQueue final {
 public:
     explicit LFQueue(size_t capacity)
-        : capacity_(nextPowerOfTwo(capacity)),
+        : capacity_(capacity == 0 ? throw std::invalid_argument("Capacity must be greater than zero")
+                                  : nextPowerOfTwo(capacity)),
           mask_(capacity_ - 1),
-          buffer_(capacity_) {
-        if (capacity == 0) {
-            throw std::invalid_argument("Capacity must be greater than zero");
-        }
-    }
+          buffer_(capacity_) {}
 
     ~LFQueue() = default;
 
@@ -41,6 +38,7 @@ public:
      * @param element Item to enqueue.
      * @return true if successfully pushed; false if ring buffer is saturated.
      */
+    [[nodiscard("Ignoring enqueue status causes silent order drops under saturation")]]
     bool enqueue(const T& element) {
         const size_t currentWrite = writeIndex_.load(std::memory_order_relaxed);
         const size_t currentRead = readIndex_.load(std::memory_order_acquire);
@@ -59,6 +57,7 @@ public:
      * @param element Item to move into the queue.
      * @return true if successfully pushed; false if ring buffer is saturated.
      */
+    [[nodiscard("Ignoring enqueue status causes silent order drops under saturation")]]
     bool enqueue(T&& element) {
         const size_t currentWrite = writeIndex_.load(std::memory_order_relaxed);
         const size_t currentRead = readIndex_.load(std::memory_order_acquire);
@@ -77,6 +76,7 @@ public:
      * @param element Output reference receiving the moved element.
      * @return true if successfully popped; false if queue is empty.
      */
+    [[nodiscard("Ignoring dequeue status can result in processing stale or uninitialized data if the queue is empty")]]
     bool dequeue(T& element) {
         const size_t currentRead = readIndex_.load(std::memory_order_relaxed);
         const size_t currentWrite = writeIndex_.load(std::memory_order_acquire);
