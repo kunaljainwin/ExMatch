@@ -76,6 +76,29 @@ public:
     }
 
     /**
+     * @brief In-place enqueue an element (Producer thread only).
+     * @tparam Args Types of constructor arguments for T.
+     * @param args Arguments forwarded to construct T in-place.
+     * @return true if successfully pushed; false if ring buffer is saturated.
+     */
+    template <typename... Args>
+    [[nodiscard("Ignoring emplace status causes silent order drops under saturation")]]
+    bool emplace(Args&&... args) {
+        const size_t currentWrite = writeIndex_.load(std::memory_order_relaxed);
+
+        if (currentWrite - cachedReadIndex_ >= capacity_) {
+            cachedReadIndex_ = readIndex_.load(std::memory_order_acquire);
+            if (currentWrite - cachedReadIndex_ >= capacity_) {
+                return false;
+            }
+        }
+
+        buffer_[currentWrite & mask_] = T(std::forward<Args>(args)...);
+        writeIndex_.store(currentWrite + 1, std::memory_order_release);
+        return true;
+    }
+
+    /**
      * @brief Dequeue an element (Consumer thread only).
      * @param element Output reference receiving the moved element.
      * @return true if successfully popped; false if queue is empty.

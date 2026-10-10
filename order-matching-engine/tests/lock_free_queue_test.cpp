@@ -62,6 +62,30 @@ void testQueueBasicOperations() {
     ASSERT_TRUE(queue.empty(), "Queue should be empty after reading all items");
 }
 
+void testQueueEmplace() {
+    struct TestItem {
+        int a;
+        double b;
+        TestItem() : a(0), b(0.0) {}
+        TestItem(int x, double y) : a(x), b(y) {}
+    };
+
+    LFQueue<TestItem> queue(4);
+    ASSERT_TRUE(queue.emplace(1, 2.5), "Emplace first item should succeed");
+    ASSERT_TRUE(queue.emplace(2, 3.5), "Emplace second item should succeed");
+    ASSERT_EQ(queue.size(), 2, "Size should be 2 after 2 emplaces");
+
+    TestItem out;
+    ASSERT_TRUE(queue.dequeue(out), "Dequeue first emplaced item");
+    ASSERT_EQ(out.a, 1, "First emplaced item.a mismatch");
+    ASSERT_TRUE(out.b == 2.5, "First emplaced item.b mismatch");
+
+    ASSERT_TRUE(queue.dequeue(out), "Dequeue second emplaced item");
+    ASSERT_EQ(out.a, 2, "Second emplaced item.a mismatch");
+    ASSERT_TRUE(out.b == 3.5, "Second emplaced item.b mismatch");
+    ASSERT_TRUE(queue.empty(), "Queue should be empty");
+}
+
 void testQueueZeroCapacityThrows() {
     bool caught = false;
     try {
@@ -133,6 +157,9 @@ int main() {
 
     testQueueZeroCapacityThrows();
     std::cout << "  [PASS] testQueueZeroCapacityThrows\n";
+
+    testQueueEmplace();
+    std::cout << "  [PASS] testQueueEmplace\n";
 
     testConcurrentSPSCIntegrity();
     std::cout << "  [PASS] testConcurrentSPSCIntegrity (500,000 messages across threads)\n";
