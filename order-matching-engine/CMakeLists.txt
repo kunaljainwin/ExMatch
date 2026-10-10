@@ -75,3 +75,15 @@ endif()
 
 add_test(NAME MatchingEngineTests COMMAND matching_engine_test)
 
+add_executable(object_pool_test
+    ${PROJECT_SOURCE_DIR}/tests/object_pool_test.cpp
+)
+target_include_directories(object_pool_test PRIVATE ${PROJECT_SOURCE_DIR}/inc)
+if(MSVC)
+    target_compile_options(object_pool_test PRIVATE /W4 /permissive-)
+else()
+    target_compile_options(object_pool_test PRIVATE -Wall -Wextra -pedantic)
+endif()
+
+add_test(NAME ObjectPoolTests COMMAND object_pool_test)
+

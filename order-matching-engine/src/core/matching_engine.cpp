@@ -14,6 +14,10 @@ MatchingEngine::MatchingEngine(size_t ingressCapacity, size_t egressCapacity)
 
 MatchingEngine::~MatchingEngine() {
     stop();
+    for (auto& [id, orderPtr] : activeOrders_) {
+        orderPool_.release(orderPtr);
+    }
+    activeOrders_.clear();
 }
 
 void MatchingEngine::start() {
@@ -91,11 +95,10 @@ void MatchingEngine::emitEgressReport(const ExecutionReport& report) {
 }
 
 void MatchingEngine::processNewOrder(const OrderRequest& req) {
-    auto order = std::make_unique<Order>(
+    Order* orderPtr = orderPool_.acquire(
         req.orderId, req.clientId, req.side, req.orderType, req.price, req.quantity, req.timestamp);
-    Order* orderPtr = order.get();
 
-    activeOrders_[req.orderId] = std::move(order);
+    activeOrders_[req.orderId] = orderPtr;
     const auto trades = orderBook_.addOrder(orderPtr);
 
     for (const auto& trade : trades) {
@@ -110,6 +113,7 @@ void MatchingEngine::processNewOrder(const OrderRequest& req) {
 
         auto makerIt = activeOrders_.find(trade.makerOrderId);
         if (makerIt != activeOrders_.end() && makerIt->second->isFilled()) {
+            orderPool_.release(makerIt->second);
             activeOrders_.erase(makerIt);
         }
     }
@@ -123,6 +127,7 @@ void MatchingEngine::processNewOrder(const OrderRequest& req) {
     emitEgressReport(statusReport);
 
     if (orderPtr->isFilled() || orderPtr->getStatus() == common::OrderStatus::CANCELLED) {
+        orderPool_.release(orderPtr);
         activeOrders_.erase(req.orderId);
     }
 }
@@ -137,7 +142,11 @@ void MatchingEngine::processCancelOrder(const OrderRequest& req) {
     if (cancelled) {
         report.type = ExecutionReportType::ORDER_CANCELLED;
         report.status = common::OrderStatus::CANCELLED;
-        activeOrders_.erase(req.orderId);
+        auto it = activeOrders_.find(req.orderId);
+        if (it != activeOrders_.end()) {
+            orderPool_.release(it->second);
+            activeOrders_.erase(it);
+        }
     } else {
         report.type = ExecutionReportType::CANCEL_REJECTED;
         report.status = common::OrderStatus::REJECTED;
