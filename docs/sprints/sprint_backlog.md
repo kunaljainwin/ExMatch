@@ -81,9 +81,9 @@
 ## Sprint 3: Low-Latency Optimization & Cache Tuning
 **Goal:** Optimize hot paths to institutional HFT benchmarks (sub-microsecond execution).
 
-- [ ] **Story 3.1:** Eliminate false sharing in `LFQueue` via `alignas(64)` cache-line padding.
-- [ ] **Story 3.2:** Implement intrusive doubly-linked order lists in price levels to eliminate dynamic heap allocations.
-- [ ] **Story 3.3:** Replace order allocations with a pre-allocated `MemoryPool`.
+- [x] **Story 3.1:** Eliminate false sharing in `LFQueue` via `alignas(64)` cache-line padding and local index caching.
+- [x] **Story 3.2:** Implement intrusive doubly-linked order lists in price levels to eliminate dynamic heap allocations.
+- [x] **Story 3.3:** Replace order allocations with a pre-allocated `ObjectPool`.
 - [ ] **Story 3.4:** Implement thread core pinning (`pthread_setaffinity_np`) in `src/common/thread.cpp`.
 - [ ] **Story 3.5:** Create latency microbenchmark (`benchmarks/matching_benchmark.cpp`) reporting P50, P99, P99.9 latency.
 

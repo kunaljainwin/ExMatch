@@ -54,14 +54,15 @@ std::vector<Trade> OrderBook::matchBuyOrder(Order* takerOrder) {
             break;
         }
 
-        auto& ordersAtLevel = askIt->second;
-        for (auto orderIt = ordersAtLevel.begin(); orderIt != ordersAtLevel.end() && !takerOrder->isFilled();) {
-            Order* makerOrder = *orderIt;
+        LimitLevel& level = askIt->second;
+        while (level.head != nullptr && !takerOrder->isFilled()) {
+            Order* makerOrder = level.head;
             const Quantity matchQty = std::min(takerOrder->getRemainingQuantity(), makerOrder->getRemainingQuantity());
             const Price matchPrice = makerOrder->getPrice();
 
             makerOrder->fill(matchQty);
             takerOrder->fill(matchQty);
+            level.totalQuantity -= matchQty;
 
             trades.push_back(Trade{
                 nextTradeId_++,
@@ -74,13 +75,11 @@ std::vector<Trade> OrderBook::matchBuyOrder(Order* takerOrder) {
 
             if (makerOrder->isFilled()) {
                 orderLookup_.erase(makerOrder->getOrderId());
-                orderIt = ordersAtLevel.erase(orderIt);
-            } else {
-                ++orderIt;
+                level.remove(makerOrder);
             }
         }
 
-        if (ordersAtLevel.empty()) {
+        if (level.empty()) {
             askIt = asks_.erase(askIt);
         } else {
             ++askIt;
@@ -102,14 +101,15 @@ std::vector<Trade> OrderBook::matchSellOrder(Order* takerOrder) {
             break;
         }
 
-        auto& ordersAtLevel = bidIt->second;
-        for (auto orderIt = ordersAtLevel.begin(); orderIt != ordersAtLevel.end() && !takerOrder->isFilled();) {
-            Order* makerOrder = *orderIt;
+        LimitLevel& level = bidIt->second;
+        while (level.head != nullptr && !takerOrder->isFilled()) {
+            Order* makerOrder = level.head;
             const Quantity matchQty = std::min(takerOrder->getRemainingQuantity(), makerOrder->getRemainingQuantity());
             const Price matchPrice = makerOrder->getPrice();
 
             makerOrder->fill(matchQty);
             takerOrder->fill(matchQty);
+            level.totalQuantity -= matchQty;
 
             trades.push_back(Trade{
                 nextTradeId_++,
@@ -122,13 +122,11 @@ std::vector<Trade> OrderBook::matchSellOrder(Order* takerOrder) {
 
             if (makerOrder->isFilled()) {
                 orderLookup_.erase(makerOrder->getOrderId());
-                orderIt = ordersAtLevel.erase(orderIt);
-            } else {
-                ++orderIt;
+                level.remove(makerOrder);
             }
         }
 
-        if (ordersAtLevel.empty()) {
+        if (level.empty()) {
             bidIt = bids_.erase(bidIt);
         } else {
             ++bidIt;
@@ -144,9 +142,11 @@ void OrderBook::restOrder(Order* order) {
     }
 
     if (order->getSide() == Side::BUY) {
-        bids_[order->getPrice()].push_back(order);
+        auto [it, inserted] = bids_.try_emplace(order->getPrice(), order->getPrice());
+        it->second.append(order);
     } else {
-        asks_[order->getPrice()].push_back(order);
+        auto [it, inserted] = asks_.try_emplace(order->getPrice(), order->getPrice());
+        it->second.append(order);
     }
 
     orderLookup_[order->getOrderId()] = order;
@@ -167,27 +167,21 @@ bool OrderBook::cancelOrder(OrderId orderId) {
 }
 
 void OrderBook::removeOrderFromBook(Order* order) {
-    if (!order) {
+    if (!order || !order->level) {
         return;
     }
 
-    if (order->getSide() == Side::BUY) {
-        auto levelIt = bids_.find(order->getPrice());
-        if (levelIt != bids_.end()) {
-            auto& vec = levelIt->second;
-            vec.erase(std::remove(vec.begin(), vec.end(), order), vec.end());
-            if (vec.empty()) {
-                bids_.erase(levelIt);
-            }
-        }
-    } else {
-        auto levelIt = asks_.find(order->getPrice());
-        if (levelIt != asks_.end()) {
-            auto& vec = levelIt->second;
-            vec.erase(std::remove(vec.begin(), vec.end(), order), vec.end());
-            if (vec.empty()) {
-                asks_.erase(levelIt);
-            }
+    LimitLevel* level = order->level;
+    const Price price = level->price;
+    const Side side = order->getSide();
+
+    level->remove(order);
+
+    if (level->empty()) {
+        if (side == Side::BUY) {
+            bids_.erase(price);
+        } else {
+            asks_.erase(price);
         }
     }
 }
@@ -197,15 +191,11 @@ std::vector<Level2Entry> OrderBook::getBidDepth(size_t maxLevels) const {
     depth.reserve(std::min(maxLevels, bids_.size()));
 
     size_t count = 0;
-    for (const auto& [price, orders] : bids_) {
+    for (const auto& [price, level] : bids_) {
         if (count >= maxLevels) {
             break;
         }
-        Quantity totalQty = 0;
-        for (const auto* order : orders) {
-            totalQty += order->getRemainingQuantity();
-        }
-        depth.push_back(Level2Entry{price, totalQty, static_cast<uint32_t>(orders.size())});
+        depth.push_back(Level2Entry{price, level.totalQuantity, level.orderCount});
         ++count;
     }
 
@@ -217,15 +207,11 @@ std::vector<Level2Entry> OrderBook::getAskDepth(size_t maxLevels) const {
     depth.reserve(std::min(maxLevels, asks_.size()));
 
     size_t count = 0;
-    for (const auto& [price, orders] : asks_) {
+    for (const auto& [price, level] : asks_) {
         if (count >= maxLevels) {
             break;
         }
-        Quantity totalQty = 0;
-        for (const auto* order : orders) {
-            totalQty += order->getRemainingQuantity();
-        }
-        depth.push_back(Level2Entry{price, totalQty, static_cast<uint32_t>(orders.size())});
+        depth.push_back(Level2Entry{price, level.totalQuantity, level.orderCount});
         ++count;
     }
 

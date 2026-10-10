@@ -2,6 +2,7 @@
 
 #include "core/order.h"
 #include "core/trade.h"
+#include "core/limit_level.h"
 #include <map>
 #include <vector>
 #include <unordered_map>
@@ -50,10 +51,10 @@ private:
     void removeOrderFromBook(Order* order);
 
     // Bids sorted descending (highest price first)
-    std::map<Price, std::vector<Order*>, std::greater<Price>> bids_;
+    std::map<Price, LimitLevel, std::greater<Price>> bids_;
 
     // Asks sorted ascending (lowest price first)
-    std::map<Price, std::vector<Order*>, std::less<Price>> asks_;
+    std::map<Price, LimitLevel, std::less<Price>> asks_;
 
     // O(1) Order lookup for active resting orders
     std::unordered_map<OrderId, Order*> orderLookup_;

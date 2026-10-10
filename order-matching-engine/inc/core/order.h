@@ -7,6 +7,8 @@ namespace core {
 
 using namespace common;
 
+struct LimitLevel;
+
 class Order {
 public:
     Order(OrderId orderId, ClientId clientId, Side side, OrderType type, Price price, Quantity quantity, Timestamp timestamp)
@@ -50,7 +52,11 @@ public:
     void cancel() noexcept {
         status_ = OrderStatus::CANCELLED;
     }
-
+    
+    // Intrusive pointers for LimitLevel FIFO queue
+    Order * prev{nullptr};
+    Order * next{nullptr};
+    LimitLevel * level{nullptr};
 private:
     OrderId orderId_;
     ClientId clientId_;
@@ -61,6 +67,8 @@ private:
     Quantity filledQuantity_;
     OrderStatus status_;
     Timestamp timestamp_;
+
+
 };
 
 } // namespace core

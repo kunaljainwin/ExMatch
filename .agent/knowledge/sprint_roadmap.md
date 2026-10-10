@@ -34,10 +34,10 @@ Start with a clean, working prototype (MVP), verify behavior, then iteratively r
 ## Sprint 3: Low-Latency Optimization & Cache Architecture (Active)
 **Goal:** Upgrade the working engine to institutional HFT performance standards.
 
-- **Story 3.1:** Eliminate dynamic heap allocation in hot path (intrusive lists & order pools).
-- **Story 3.2:** Power-of-2 bitwise masking and `alignas(64)` false sharing elimination in `LFQueue`.
-- **Story 3.3:** CPU affinity (`pthread_setaffinity_np`) and core isolation.
-- **Story 3.4:** Latency benchmarking (P50, P99, P99.9).
+- [x] **Story 3.1:** Eliminate dynamic heap allocation in hot path (intrusive lists & object pool).
+- [x] **Story 3.2:** Power-of-2 bitwise masking, local index caching, and `alignas(64)` false sharing elimination in `LFQueue`.
+- [ ] **Story 3.3:** CPU affinity (`pthread_setaffinity_np`) and core isolation.
+- [ ] **Story 3.4:** Latency benchmarking (P50, P99, P99.9).
 
 ---
 
