@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common/lock_free_queue.hpp"
+#include "common/object_pool.hpp"
 #include "common/types.h"
 #include "core/order.h"
 #include "core/order_book.h"
@@ -73,10 +74,14 @@ public:
     [[nodiscard]] bool isRunning() const noexcept;
 
     // SPSC Ingress (Producer side)
+    [[nodiscard("Ignoring enqueueOrder status can cause silent order drop if ingress queue is saturated")]]
     bool enqueueOrder(const OrderRequest& request);
+
+    [[nodiscard("Ignoring enqueueCancel status can cause silent cancel drop if ingress queue is saturated")]]
     bool enqueueCancel(common::OrderId orderId, common::ClientId clientId = 0, common::Timestamp timestamp = 0);
 
     // SPSC Egress (Consumer side)
+    [[nodiscard("Ignoring dequeueExecution status can cause processing invalid report if egress queue is empty")]]
     bool dequeueExecution(ExecutionReport& report);
 
     // Synchronous execution for offline replay and unit testing
@@ -96,7 +101,8 @@ private:
     common::LFQueue<ExecutionReport> egressQueue_;
 
     OrderBook orderBook_;
-    std::unordered_map<common::OrderId, std::unique_ptr<Order>> activeOrders_;
+    common::ObjectPool<Order> orderPool_;
+    std::unordered_map<common::OrderId, Order*> activeOrders_;
 
     std::atomic<bool> running_{false};
     std::thread workerThread_;
