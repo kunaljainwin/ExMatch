@@ -12,8 +12,8 @@
 | **Sprint 0** | Foundation & Project Hierarchy | **COMPLETED** | Aligned folder structure, CMake targets, Git standards |
 | **Sprint 1** | In-Memory Working Prototype (MVP) | **COMPLETED** | Deterministic Limit Order Book, Price-Time matching, unit tests |
 | **Sprint 2** | Concurrency & SPSC Ring Buffers | **COMPLETED** | Single-writer pinned core, lock-free queues, decoupled ingress/egress |
-| **Sprint 3** | Low-Latency Optimization | **ACTIVE** | Zero heap allocation, intrusive order lists, power-of-2 bitwise masking |
-| **Sprint 4** | Observability & Production Resilience | PLANNED | Async zero-allocation logger, FMEA error handling, cancel-on-disconnect |
+| **Sprint 3** | Low-Latency Optimization | **COMPLETED** | Zero heap allocation, intrusive order lists, power-of-2 bitwise masking |
+| **Sprint 4** | Observability & Production Resilience | **ACTIVE** | Async zero-allocation logger, FMEA error handling, cancel-on-disconnect |
 | **Sprint 5** | Exchange Gateway Interop | PLANNED | Binary packet protocol, `ExchangeSimulator` integration |
 | **Sprint 6** | Monotonic Sequencing, Idempotency & WAL | PLANNED | Lock-free sequencer, clientOrderId deduplication, append-only WAL |
 | **Sprint 7** | Checksummed Snapshots & Gap-Free Recovery | PLANNED | Atomic snapshots, CRC32 verification, sequence-gap detection |
@@ -84,8 +84,8 @@
 - [x] **Story 3.1:** Eliminate false sharing in `LFQueue` via `alignas(64)` cache-line padding and local index caching.
 - [x] **Story 3.2:** Implement intrusive doubly-linked order lists in price levels to eliminate dynamic heap allocations.
 - [x] **Story 3.3:** Replace order allocations with a pre-allocated `ObjectPool`.
-- [ ] **Story 3.4:** Implement thread core pinning (`pthread_setaffinity_np`) in `src/common/thread.cpp`.
-- [ ] **Story 3.5:** Create latency microbenchmark (`benchmarks/matching_benchmark.cpp`) reporting P50, P99, P99.9 latency.
+- [x] **Story 3.4:** Implement thread core pinning (`pthread_setaffinity_np`) in `src/common/thread.cpp`.
+- [x] **Story 3.5:** Create latency microbenchmark (`benchmarks/matching_benchmark.cpp`) reporting P50, P99, P99.9 latency.
 
 ---
 

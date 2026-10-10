@@ -64,6 +64,7 @@ add_executable(matching_engine_test
     ${PROJECT_SOURCE_DIR}/tests/matching_engine_test.cpp
     ${PROJECT_SOURCE_DIR}/src/core/matching_engine.cpp
     ${PROJECT_SOURCE_DIR}/src/core/order_book.cpp
+    ${PROJECT_SOURCE_DIR}/src/common/thread.cpp
 )
 target_include_directories(matching_engine_test PRIVATE ${PROJECT_SOURCE_DIR}/inc)
 target_link_libraries(matching_engine_test PRIVATE Threads::Threads)
@@ -74,6 +75,20 @@ else()
 endif()
 
 add_test(NAME MatchingEngineTests COMMAND matching_engine_test)
+
+add_executable(thread_test
+    ${PROJECT_SOURCE_DIR}/tests/thread_test.cpp
+    ${PROJECT_SOURCE_DIR}/src/common/thread.cpp
+)
+target_include_directories(thread_test PRIVATE ${PROJECT_SOURCE_DIR}/inc)
+target_link_libraries(thread_test PRIVATE Threads::Threads)
+if(MSVC)
+    target_compile_options(thread_test PRIVATE /W4 /permissive-)
+else()
+    target_compile_options(thread_test PRIVATE -Wall -Wextra -pedantic)
+endif()
+
+add_test(NAME ThreadTests COMMAND thread_test)
 
 add_executable(object_pool_test
     ${PROJECT_SOURCE_DIR}/tests/object_pool_test.cpp
@@ -86,4 +101,20 @@ else()
 endif()
 
 add_test(NAME ObjectPoolTests COMMAND object_pool_test)
+
+# Benchmarks
+add_executable(matching_benchmark
+    ${PROJECT_SOURCE_DIR}/benchmarks/matching_benchmark.cpp
+    ${PROJECT_SOURCE_DIR}/src/core/matching_engine.cpp
+    ${PROJECT_SOURCE_DIR}/src/core/order_book.cpp
+    ${PROJECT_SOURCE_DIR}/src/common/thread.cpp
+)
+target_include_directories(matching_benchmark PRIVATE ${PROJECT_SOURCE_DIR}/inc)
+target_link_libraries(matching_benchmark PRIVATE Threads::Threads)
+if(MSVC)
+    target_compile_options(matching_benchmark PRIVATE /W4 /permissive- /O2)
+else()
+    target_compile_options(matching_benchmark PRIVATE -Wall -Wextra -pedantic -O3)
+endif()
+
 

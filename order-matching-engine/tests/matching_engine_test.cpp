@@ -61,6 +61,12 @@ void testEngineLifecycle() {
     engine.stop();
     ASSERT_TRUE(!engine.isRunning(), "Engine should remain stopped");
 
+    // Start with core pinning
+    MatchingEngine pinnedEngine(64, 64);
+    pinnedEngine.start(0);
+    ASSERT_TRUE(pinnedEngine.isRunning(), "Pinned engine should be running");
+    pinnedEngine.stop();
+
     std::cout << "[PASS] testEngineLifecycle\n";
 }
 

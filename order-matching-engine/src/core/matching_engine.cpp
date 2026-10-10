@@ -1,4 +1,5 @@
 #include "core/matching_engine.h"
+#include "common/thread.h"
 #include <utility>
 #include <chrono>
 
@@ -20,11 +21,17 @@ MatchingEngine::~MatchingEngine() {
     activeOrders_.clear();
 }
 
-void MatchingEngine::start() {
+void MatchingEngine::start(int cpuCore) {
     if (running_.exchange(true, std::memory_order_acq_rel)) {
         return;
     }
-    workerThread_ = std::thread(&MatchingEngine::run, this);
+    workerThread_ = std::thread([this, cpuCore]() {
+        if (cpuCore >= 0) {
+            common::setCurrentThreadAffinity(cpuCore);
+        }
+        common::setThreadName("engine_worker");
+        run();
+    });
 }
 
 void MatchingEngine::stop() {

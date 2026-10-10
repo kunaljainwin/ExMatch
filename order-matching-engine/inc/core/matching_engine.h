@@ -69,7 +69,7 @@ public:
     MatchingEngine(MatchingEngine&&) = delete;
     MatchingEngine& operator=(MatchingEngine&&) = delete;
 
-    void start();
+    void start(int cpuCore = -1);
     void stop();
     [[nodiscard]] bool isRunning() const noexcept;
 
