@@ -41,10 +41,12 @@ public:
     [[nodiscard("Ignoring enqueue status causes silent order drops under saturation")]]
     bool enqueue(const T& element) {
         const size_t currentWrite = writeIndex_.load(std::memory_order_relaxed);
-        const size_t currentRead = readIndex_.load(std::memory_order_acquire);
 
-        if (currentWrite - currentRead >= capacity_) {
-            return false;
+        if (currentWrite - cachedReadIndex_ >= capacity_) {
+            cachedReadIndex_ = readIndex_.load(std::memory_order_acquire);
+            if (currentWrite - cachedReadIndex_ >= capacity_) {
+                return false;
+            }
         }
 
         buffer_[currentWrite & mask_] = element;
@@ -60,10 +62,12 @@ public:
     [[nodiscard("Ignoring enqueue status causes silent order drops under saturation")]]
     bool enqueue(T&& element) {
         const size_t currentWrite = writeIndex_.load(std::memory_order_relaxed);
-        const size_t currentRead = readIndex_.load(std::memory_order_acquire);
 
-        if (currentWrite - currentRead >= capacity_) {
-            return false;
+        if (currentWrite - cachedReadIndex_ >= capacity_) {
+            cachedReadIndex_ = readIndex_.load(std::memory_order_acquire);
+            if (currentWrite - cachedReadIndex_ >= capacity_) {
+                return false;
+            }
         }
 
         buffer_[currentWrite & mask_] = std::move(element);
@@ -79,12 +83,14 @@ public:
     [[nodiscard("Ignoring dequeue status can result in processing stale or uninitialized data if the queue is empty")]]
     bool dequeue(T& element) {
         const size_t currentRead = readIndex_.load(std::memory_order_relaxed);
-        const size_t currentWrite = writeIndex_.load(std::memory_order_acquire);
 
-        if (currentWrite == currentRead) {
-            return false;
+        if (currentRead == cachedWriteIndex_) {
+            cachedWriteIndex_ = writeIndex_.load(std::memory_order_acquire);
+            if (currentRead == cachedWriteIndex_) {
+                return false;
+            }
         }
-
+        
         element = std::move(buffer_[currentRead & mask_]);
         readIndex_.store(currentRead + 1, std::memory_order_release);
         return true;
@@ -123,9 +129,14 @@ private:
     const size_t capacity_;
     const size_t mask_;
     std::vector<T> buffer_;
-
+    
+    // Producer cache line
     alignas(64) std::atomic<size_t> writeIndex_{0};
+    size_t cachedReadIndex_{0};
+
+    // Consumer cache line (64-byte aligned away from producer)
     alignas(64) std::atomic<size_t> readIndex_{0};
+    size_t cachedWriteIndex_{0};
 };
 
 } // namespace common
